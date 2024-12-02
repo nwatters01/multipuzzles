@@ -9,3 +9,9 @@ class BasePuzzle:
         
     def add_arrangement(self, arrangement):
         self._arrangements.append(arrangement)
+        
+    def plot_arrangements(self):
+        figures = []
+        for arrangement in self._arrangements:
+            figures.append(arrangement.plot())
+        return figures

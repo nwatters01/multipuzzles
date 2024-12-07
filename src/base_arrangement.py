@@ -18,6 +18,7 @@ class Transform:
             theta (float): Rotation angle in radians.
         """
         self.translation = translation
+        self.theta = theta
         self.rotation_matrix = np.array([
             [np.cos(theta), -np.sin(theta)],
             [np.sin(theta), np.cos(theta)],
@@ -207,6 +208,7 @@ class BaseArrangement:
         for piece_index in range(self._num_pieces):
             vertices = arranged_pieces[piece_index]
             label = self._pieces[piece_index].label
+            transform = self._transforms[piece_index]
             
             # Plot edges
             for i in range(len(vertices)):
@@ -221,6 +223,12 @@ class BaseArrangement:
             
             # Plot label
             centroid = np.mean(vertices, axis=0)
-            ax.text(centroid[0], centroid[1], label, fontsize=12)
+            ax.text(
+                centroid[0],
+                centroid[1],
+                label,
+                fontsize=12,
+                rotation=transform.theta * 180 / np.pi,
+            )
         
         return fig

@@ -1,5 +1,6 @@
 """Base puzzle class."""
 
+from matplotlib import pyplot as plt
 import numpy as np
 
 # Maximum allowable number of iterations for snapping together
@@ -54,6 +55,9 @@ class BasePuzzle:
         
         # Sanity check for convergence
         if not done:
+            print(f"Did not converge. Worst error is {worst_error}.")
+            self.plot_arrangements(f"Iteration {iteration}; ")
+            plt.show()
             raise ValueError(f"Did not converge. Worst error is {worst_error}.")
         
     def plot_arrangements(self, title_prefix=""):

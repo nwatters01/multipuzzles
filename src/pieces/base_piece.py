@@ -15,21 +15,13 @@ class BasePiece:
                 edge, with wrapping around to the first point.
             label (str): Label for the piece.
         """
-        self._vertices = vertices
+        self.vertices = vertices
         self._label = label
         self._num_sides = len(vertices)
         self._edges = []
         for i in range(self._num_sides):
             self._edges.append((vertices[i - 1], vertices[i]))
             
-    def recenter(self):
-        return translation
-    
-    @property
-    def vertices(self) -> np.array:
-        """Return the vertices."""
-        return self._vertices
-
     @property
     def edges(self) -> list:
         """Return the edges."""

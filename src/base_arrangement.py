@@ -97,6 +97,7 @@ class BaseArrangement:
                 frame.
         """
         self._pieces = pieces
+        self._num_pieces = len(pieces)
         self._transforms = transforms
         self._identified_vertices = self._find_identified_vertices()
         self._num_pieces = len(pieces)
@@ -109,27 +110,39 @@ class BaseArrangement:
         at the same location.
         """
         # Loop over all identified vertices
+        worst_error = 0
         for identified_vertices in self._identified_vertices:
             # Get the transformed vertices
             transformed_vertices = [
-                self._transforms[piece].apply(piece.vertices[vertex])
+                self._transforms[piece].apply(
+                    self._pieces[piece].vertices[vertex])
                 for piece, vertex in identified_vertices.piece_vertex_pairs
             ]
             # Find the average of the transformed vertices
             average_vertex = np.mean(transformed_vertices, axis=0)
             
+            # Compute the error
+            error = np.max([
+                np.linalg.norm(average_vertex - x)
+                for x in transformed_vertices
+            ])
+            worst_error = max(worst_error, error)
+            
             # Mutate the pieces in place
             for piece, vertex in identified_vertices.piece_vertex_pairs:
-                piece.vertices[vertex] = average_vertex
+                self._pieces[piece].vertices[vertex] = (
+                    self._transforms[piece].inverse(average_vertex))
         
         # Loop over pieces, restoring their original centroid
         for piece, transform in zip(self._pieces, self._transforms):
             # TODO: Change to center of mass instead of average of vertices
             centroid = np.mean(piece.vertices, axis=0)
             piece.vertices -= centroid[None]
-            transform.translation += centroid
+            transform.translation += (
+                transform.inverse_rotation_matrix @ centroid)
             
         # TODO: Consider correcting for rotation of the mutated piece
+        return worst_error
         
     def arrange(self) -> List[np.ndarray]:
         """Apply transforms to all pieces to arrange."""
@@ -155,12 +168,16 @@ class BaseArrangement:
         """
         vertex_coordinates = []
         identified_vertices = []
-        for piece in self._pieces:
-            for vertex_index, vertex in enumerate(piece.vertices):
+        arranged_pieces = self.arrange()
+        for piece_index in range(self._num_pieces):
+            arranged_piece = arranged_pieces[piece_index]
+            for vertex_index, vertex in enumerate(arranged_piece):
+                piece_vertex_pair = (piece_index, vertex_index)
                 # Seed if necessary
                 if len(identified_vertices) == 0:
                     vertex_coordinates.append(vertex)
-                    identified_vertices.append([(piece, vertex_index)])
+                    identified_vertices.append([piece_vertex_pair])
+                    continue
                 
                 # Check if vertex is near vertex_coordinates
                 distances = np.array([
@@ -172,13 +189,13 @@ class BaseArrangement:
                     # Vertex is not near an already identified vertex, so start
                     # a new identified vertex
                     vertex_coordinates.append(vertex)
-                    identified_vertices.append([(piece, vertex_index)])
+                    identified_vertices.append([piece_vertex_pair])
                 elif np.sum(nearby) == 1:
                     # Vertex is near an already identified vertex, so add it to
                     # that one
                     nearby_index = np.argmax(nearby)
                     identified_vertices[nearby_index].append(
-                        (piece, vertex_index))
+                        piece_vertex_pair)
                 else:
                     # Vertex is not nearby to more than one identified vertex
                     raise ValueError(
@@ -190,17 +207,18 @@ class BaseArrangement:
                     
         # Convert identified vertices into IdentifiedVertices datatypes
         identified_vertices = [
-            IdentifiedVertices(x) for x in identified_vertices
+            IdentifiedVertices(*x) for x in identified_vertices
         ]
         
         return identified_vertices
     
-    def plot(self):
+    def plot(self, title=''):
         """Plot arranged pieces."""
-        fig, ax = plt.subplots(1, 1, figsize=(6, 6))
+        fig, ax = plt.subplots(1, 1, figsize=(4, 4))
         ax.set_aspect('equal')
         ax.set_xticks([])
         ax.set_yticks([])
+        ax.set_title(title)
         
         # Iterate through piece, plotting vertices and edges
         arranged_pieces = self.arrange()
@@ -232,3 +250,11 @@ class BaseArrangement:
             )
         
         return fig
+    
+    @property
+    def pieces(self):
+        return self._pieces
+    
+    @property
+    def transforms(self):
+        return self._transforms

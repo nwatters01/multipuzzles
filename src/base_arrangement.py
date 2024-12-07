@@ -98,6 +98,7 @@ class BaseArrangement:
         self._pieces = pieces
         self._transforms = transforms
         self._identified_vertices = self._find_identified_vertices()
+        self._num_pieces = len(pieces)
         
     def snap_together(self):
         """Adjust pieces and transforms so that they fit together.
@@ -196,8 +197,30 @@ class BaseArrangement:
     def plot(self):
         """Plot arranged pieces."""
         fig, ax = plt.subplots(1, 1, figsize=(6, 6))
-        arranged_pieces = self.arrange()
-        arranged_vertices = np.concatenate(arranged_pieces, axis=0)
-        ax.scatter(arranged_vertices[:, 0], arranged_vertices[:, 1], c='k')
         ax.set_aspect('equal')
+        ax.set_xticks([])
+        ax.set_yticks([])
+        
+        # Iterate through piece, plotting vertices and edges
+        arranged_pieces = self.arrange()
+        
+        for piece_index in range(self._num_pieces):
+            vertices = arranged_pieces[piece_index]
+            label = self._pieces[piece_index].label
+            
+            # Plot edges
+            for i in range(len(vertices)):
+                ax.plot(
+                    [vertices[i, 0], vertices[(i + 1) % len(vertices), 0]],
+                    [vertices[i, 1], vertices[(i + 1) % len(vertices), 1]],
+                    c='k',
+                )
+            
+            # Plot vertices
+            ax.scatter(vertices[:, 0], vertices[:, 1], c='k')
+            
+            # Plot label
+            centroid = np.mean(vertices, axis=0)
+            ax.text(centroid[0], centroid[1], label, fontsize=12)
+        
         return fig

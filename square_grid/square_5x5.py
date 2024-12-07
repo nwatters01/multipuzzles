@@ -17,8 +17,8 @@ class Puzzle(base_puzzle.BasePuzzle):
         
         # Create all the pieces
         pieces = [
-            square_piece.SquarePiece(side_length=1)
-            for _ in range(25)
+            square_piece.SquarePiece(side_length=1, label=str(i))
+            for i in range(25)
         ]
         
         # Create the puzzle

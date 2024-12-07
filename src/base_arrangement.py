@@ -7,6 +7,30 @@ from pieces import base_piece
 from typing import List, Tuple
 
 
+def best_fit_rotation(x, y):
+    """Find best fit rotation matrix between two 2-dimensional datasets.
+    
+    Args:
+        x (np.array): Array of shape (n, 2) containing the first set of points.
+        y (np.array): Array of shape (n, 2) containing the second set of points.
+    """
+    # Center the points by subtracting the centroid of each set of points
+    x_centered = x - np.mean(x, axis=0)
+    y_centered = y - np.mean(y, axis=0)
+    
+    # Compute SVD of the covariance matrix
+    cov = x_centered.T @ y_centered
+    U, _, Vh = np.linalg.svd(cov)
+    rotation_matrix = Vh.T @ U.T
+    
+    # Ensure a proper rotation (i.e., no reflection)
+    if np.linalg.det(rotation_matrix) < 0:
+        Vh[-1, :] *= -1
+        rotation_matrix = Vh.T @ U.T
+    
+    return rotation_matrix
+
+
 class Transform:
     """Affine transform."""
     
@@ -18,14 +42,17 @@ class Transform:
             theta (float): Rotation angle in radians.
         """
         self.translation = translation
-        self.theta = theta
+        self._theta = theta
+        self.make_rotation_matrices()
+        
+    def make_rotation_matrices(self):
         self.rotation_matrix = np.array([
-            [np.cos(theta), -np.sin(theta)],
-            [np.sin(theta), np.cos(theta)],
+            [np.cos(self._theta), -np.sin(self._theta)],
+            [np.sin(self._theta), np.cos(self._theta)],
         ])
         self.inverse_rotation_matrix = np.array([
-            [np.cos(-theta), -np.sin(-theta)],
-            [np.sin(-theta), np.cos(-theta)],
+            [np.cos(-self._theta), -np.sin(-self._theta)],
+            [np.sin(-self._theta), np.cos(-self._theta)],
         ])
     
     def apply(self, points: np.array) -> np.array:
@@ -54,6 +81,15 @@ class Transform:
         rotated_points = np.dot(
             translated_points, self.inverse_rotation_matrix)
         return rotated_points
+    
+    @property
+    def theta(self):
+        return self._theta
+    
+    @theta.setter
+    def theta(self, value):
+        self._theta = value
+        self.make_rotation_matrices()
     
     
 class IdentifiedVertices:
@@ -111,6 +147,9 @@ class BaseArrangement:
         """
         # Loop over all identified vertices
         worst_error = 0
+        new_vertices_per_piece = [
+            np.copy(piece.vertices) for piece in self._pieces
+        ]
         for identified_vertices in self._identified_vertices:
             # Get the transformed vertices
             transformed_vertices = [
@@ -130,18 +169,32 @@ class BaseArrangement:
             
             # Mutate the pieces in place
             for piece, vertex in identified_vertices.piece_vertex_pairs:
-                self._pieces[piece].vertices[vertex] = (
+                new_vertices_per_piece[piece][vertex] = (
                     self._transforms[piece].inverse(average_vertex))
-        
-        # Loop over pieces, restoring their original centroid
-        for piece, transform in zip(self._pieces, self._transforms):
-            # TODO: Change to center of mass instead of average of vertices
-            centroid = np.mean(piece.vertices, axis=0)
-            piece.vertices -= centroid[None]
-            transform.translation += (
-                transform.inverse_rotation_matrix @ centroid)
+                
+        # Loop over pieces and transforms, finding the best possible new
+        # transform
+        for i in range(self._num_pieces):
+            new_vertices = new_vertices_per_piece[i]
+            piece = self._pieces[i]
+            transform = self._transforms[i]
             
-        # TODO: Consider correcting for rotation of the mutated piece
+            # Correct for translation of the piece
+            new_centroid = np.mean(new_vertices, axis=0)
+            piece.vertices -= new_centroid[None]
+            delta_translation= transform.inverse_rotation_matrix @ new_centroid
+            transform.translation += delta_translation
+            
+            # Correct for rotation of the piece
+            rotation_matrix = best_fit_rotation(piece.vertices, new_vertices)
+            theta = np.arctan2(rotation_matrix[1, 0], rotation_matrix[0, 0])
+            transform.theta = transform.theta - theta
+            
+            # Mutate the vertices to be the new vertices
+            new_vertices = new_vertices - new_centroid[None]
+            new_v = np.dot(new_vertices, rotation_matrix)
+            piece.vertices = new_v
+            
         return worst_error
         
     def arrange(self) -> List[np.ndarray]:
@@ -214,7 +267,7 @@ class BaseArrangement:
     
     def plot(self, title=''):
         """Plot arranged pieces."""
-        fig, ax = plt.subplots(1, 1, figsize=(4, 4))
+        fig, ax = plt.subplots(1, 1, figsize=(6, 6))
         ax.set_aspect('equal')
         ax.set_xticks([])
         ax.set_yticks([])

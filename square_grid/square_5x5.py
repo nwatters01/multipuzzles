@@ -10,12 +10,12 @@ import base_arrangement
 from warping import stretch
 from pieces import square_piece
 
-_RANDOM_SEED = 0
+_RANDOM_SEED = 1
 
 
 class Puzzle(base_puzzle.BasePuzzle):
 
-    def __init__(self, width=4, height=4):
+    def __init__(self, width=5, height=5):
         """Constructor."""
         self._width = width
         self._height = height

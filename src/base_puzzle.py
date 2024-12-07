@@ -19,7 +19,7 @@ class BasePuzzle:
                     warping,
                     arrangement_index,
                     convergence_threshold=1e-2,
-                    plot_every=100):
+                    plot_every=None):
         # TODO: Consider moving this to the arrangement class
         
         # Apply the warping to the arrangement
@@ -27,7 +27,11 @@ class BasePuzzle:
         for piece, transform in zip(arrangement.pieces, arrangement.transforms):
             transformed_vertices = transform.apply(piece.vertices)
             warped_vertices = warping(transformed_vertices)
-            piece.vertices = transform.inverse(warped_vertices)
+            new_vertices = transform.inverse(warped_vertices)
+            new_centroid = np.mean(new_vertices, axis=0)
+            piece.vertices = new_vertices - new_centroid
+            transform.translation += (
+                transform.inverse_rotation_matrix @ new_centroid)
         
         # Reorder arrangements to start at arrangement_index. This will be the 
         # order of snapping together for each iteration.
@@ -41,7 +45,7 @@ class BasePuzzle:
             worst_error = np.max([a.snap_together() for a in arrangements])
             
             # Plot if necessary
-            if iteration % plot_every == 0:
+            if plot_every is not None and iteration % plot_every == 0:
                 self.plot_arrangements(f"Iteration {iteration}; ")
             
             if worst_error < convergence_threshold:

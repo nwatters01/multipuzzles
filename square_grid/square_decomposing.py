@@ -9,6 +9,7 @@ import base_puzzle
 import base_arrangement
 from warping import stretch
 from warping import twist
+from warping import wave
 from pieces import square_piece
 
 _RANDOM_SEED = 1
@@ -51,15 +52,17 @@ class DecomposingPuzzle(base_puzzle.BasePuzzle):
         self.add_decomposed_arrangement()
         
         # Add warpings
-        stretch_warping = stretch.Stretch(theta=np.pi / 4, stretch_factor=1.3)
-        self.add_warping(stretch_warping, arrangement_index=0)
         twist_warping = twist.Twist(
             puzzle_bounds=np.array([[0, 0], list(self._big_size)]),
-            num_twists=10,
-            rotation_magnitude=0.6 * np.pi,
-            basin_size=10,
+            num_twists=15,
+            rotation_magnitude=0.4 * np.pi,
+            basin_size=2,
         )
         self.add_warping(twist_warping, arrangement_index=0)
+        wave_warping = wave.Wave(theta=0.1 * np.pi, amplitude=0.8, frequency=1)
+        self.add_warping(wave_warping, arrangement_index=0)
+        stretch_warping = stretch.Stretch(theta=np.pi / 4, stretch_factor=1.3)
+        self.add_warping(stretch_warping, arrangement_index=0)
         
     def add_big_arrangement(self):
         """Add a random arrangement."""

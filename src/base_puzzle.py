@@ -68,6 +68,8 @@ class BasePuzzle:
             num_arrangements, 1, figsize=(8, num_arrangements * 4),
             sharex=True, sharey=True,
         )
+        if num_arrangements == 1:
+            axes = [axes]
         
         for i in range(num_arrangements):
             title = f"{title_prefix}Arrangement {i}"

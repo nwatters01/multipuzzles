@@ -1,6 +1,5 @@
 """Base arrangement class."""
 
-from matplotlib import pyplot as plt
 import numpy as np
 from pieces import base_piece
 
@@ -265,9 +264,8 @@ class BaseArrangement:
         
         return identified_vertices
     
-    def plot(self, title=''):
+    def plot(self, ax, title=''):
         """Plot arranged pieces."""
-        fig, ax = plt.subplots(1, 1, figsize=(6, 6))
         ax.set_aspect('equal')
         ax.set_xticks([])
         ax.set_yticks([])
@@ -286,11 +284,11 @@ class BaseArrangement:
                 ax.plot(
                     [vertices[i, 0], vertices[(i + 1) % len(vertices), 0]],
                     [vertices[i, 1], vertices[(i + 1) % len(vertices), 1]],
-                    c='k',
+                    c='k', linewidth=1,
                 )
             
             # Plot vertices
-            ax.scatter(vertices[:, 0], vertices[:, 1], c='k')
+            ax.scatter(vertices[:, 0], vertices[:, 1], c='k', s=10)
             
             # Plot label
             centroid = np.mean(vertices, axis=0)
@@ -298,11 +296,11 @@ class BaseArrangement:
                 centroid[0],
                 centroid[1],
                 label,
-                fontsize=12,
+                fontsize=10,
                 rotation=transform.theta * 180 / np.pi,
+                horizontalalignment='center',
+                verticalalignment='center',
             )
-        
-        return fig
     
     @property
     def pieces(self):

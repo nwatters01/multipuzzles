@@ -5,6 +5,7 @@ import numpy as np
 
 # Maximum allowable number of iterations for snapping together
 _MAX_ITERS = 1000
+# _MAX_ITERS = 1
 
 
 class BasePuzzle:
@@ -51,6 +52,7 @@ class BasePuzzle:
             
             if worst_error < convergence_threshold:
                 done = True
+                print(f"Converged after {iteration} iterations.")
                 break
         
         # Sanity check for convergence
@@ -61,8 +63,16 @@ class BasePuzzle:
             raise ValueError(f"Did not converge. Worst error is {worst_error}.")
         
     def plot_arrangements(self, title_prefix=""):
-        figures = []
-        for i, arrangement in enumerate(self._arrangements):
+        num_arrangements = len(self._arrangements)
+        fig, axes = plt.subplots(
+            num_arrangements, 1, figsize=(8, num_arrangements * 4),
+            sharex=True, sharey=True,
+        )
+        
+        for i in range(num_arrangements):
             title = f"{title_prefix}Arrangement {i}"
-            figures.append(arrangement.plot(title))
-        return figures
+            self._arrangements[i].plot(axes[i], title)
+        
+        fig.tight_layout()
+        
+        return fig

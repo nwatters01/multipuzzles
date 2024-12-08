@@ -8,6 +8,7 @@ sys.path.append("../src")
 import base_puzzle
 import base_arrangement
 from warping import stretch
+from warping import twist
 from pieces import square_piece
 
 _RANDOM_SEED = 1
@@ -35,8 +36,15 @@ class Puzzle(base_puzzle.BasePuzzle):
         self.add_random_arrangement()
         
         # Add warpings
-        stretch_warping = stretch.Stretch(theta=np.pi / 4, stretch_factor=2)
+        stretch_warping = stretch.Stretch(theta=np.pi / 4, stretch_factor=1.5)
         self.add_warping(stretch_warping, arrangement_index=0)
+        twist_warping = twist.Twist(
+            puzzle_bounds=np.array([[0, 0], [width, height]]),
+            num_twists=5,
+            rotation_magnitude=np.pi / 2,
+            basin_size=3,
+        )
+        self.add_warping(twist_warping, arrangement_index=0)
         
     def add_random_arrangement(self):
         """Add a random arrangement."""

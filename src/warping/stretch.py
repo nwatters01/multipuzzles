@@ -1,4 +1,4 @@
-"""Base warping class."""
+"""Stretch warping class."""
 
 import abc
 import numpy as np

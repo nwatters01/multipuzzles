@@ -18,9 +18,7 @@ Go to the `square_grid` directory and run `$ python squre_5x5.py`.
 
 ## To-Do
 
-1. Consider more kinds of warpings.
-2. Consider adding some pressure to prevent the piece from collapsing when
+1. Figure out how to prevent multiple unintended solutions.
+2. Prevent wibbles from self-intersecting.
+3. Consider adding some pressure to prevent the piece from collapsing when
    snapping together.
-3. Make arrangements that decompose the puzzle into multiple connected
-   components.
-4. Add edge wibbles.

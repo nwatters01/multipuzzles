@@ -94,8 +94,7 @@ class Transform:
 class IdentifiedVertices:
     """Holder class for identified vertices."""
     
-    def __init__(self,
-                 *piece_vertex_pairs: List[Tuple[base_piece.BasePiece, int]]):
+    def __init__(self, *piece_vertex_pairs: List[Tuple[int, int]]):
         """Constructor.
         
         Args:
@@ -115,6 +114,31 @@ class IdentifiedVertices:
     @property
     def piece_vertex_pairs(self):
         return self._piece_vertex_pairs
+    
+    
+class IdentifiedEdges:
+    """Holder class for identified edges."""
+    
+    def __init__(self, *piece_edge_pairs: List[Tuple[int, int]]):
+        """Constructor.
+        
+        Args:
+            piece_edge_pairs: List of (piece, edge) pair, where edge is an
+                integer index. Each of these piece-edges will be identified.
+        """
+        self._piece_edge_pairs = piece_edge_pairs
+    
+    @property
+    def pieces(self):
+        return [x[0] for x in self._piece_edge_pairs]
+    
+    @property
+    def edges(self):
+        return [x[1] for x in self._piece_edge_pairs]
+    
+    @property
+    def piece_edge_pairs(self):
+        return self._piece_edge_pairs
 
 
 class BaseArrangement:
@@ -135,6 +159,7 @@ class BaseArrangement:
         self._num_pieces = len(pieces)
         self._transforms = transforms
         self._identified_vertices = self._find_identified_vertices()
+        self._identified_edges = self._find_identified_edges()
         self._num_pieces = len(pieces)
         
     def snap_together(self):
@@ -264,6 +289,52 @@ class BaseArrangement:
         
         return identified_vertices
     
+    def _find_identified_edges(
+        self,
+        epsilon=1e-3,
+    ) -> List[IdentifiedEdges]:
+        """Find edges that are identified by the arrangement.
+        
+        If two edges from different pieces should be glued together by this
+        arrangement, then we call them "identified". This is the terminology
+        used in topology/geometry.
+        
+        Returns:
+            list[list[(piece, edge index)]]: List of lists of tuples. Each
+                inner list contains tuples of the form (piece, edge index)
+                where the edges are identified.
+        """
+        identified_edges = {}
+        
+        # Compute endpoint positions of each edges
+        edge_to_endpoints = {}
+        arranged_piece_vertices = self.arrange()
+        for piece_index, piece in enumerate(self._pieces):
+            for edge_index in range(piece.num_sides):
+                endpoint_vertex_indices = piece.vertex_indices_per_edge[
+                    edge_index]
+                edge_to_endpoints[(piece_index, edge_index)] = [
+                    arranged_piece_vertices[piece_index][i]
+                    for i in endpoint_vertex_indices
+                ]
+        
+        # Loop through edges, finding others that share endpoint positions
+        for key_0, endpoints_0 in edge_to_endpoints.items():
+            for key_1, endpoints_1 in edge_to_endpoints.items():
+                if key_0 == key_1:
+                    continue
+                
+                # Check if endpoints are the same
+                endpoint_distances = [
+                    np.linalg.norm(e0 - e1)
+                    for e0, e1 in zip(endpoints_0, endpoints_1[::-1])
+                ]
+                if np.all(np.array(endpoint_distances) < epsilon):
+                    identified_edges[key_0] = key_1
+                    identified_edges[key_1] = key_0
+                    
+        return identified_edges
+    
     def plot(self, ax, title=''):
         """Plot arranged pieces."""
         ax.set_aspect('equal')
@@ -275,16 +346,19 @@ class BaseArrangement:
         arranged_pieces = self.arrange()
         
         for piece_index in range(self._num_pieces):
+            piece = self._pieces[piece_index]
             vertices = arranged_pieces[piece_index]
-            label = self._pieces[piece_index].label
+            label = piece.label
             transform = self._transforms[piece_index]
             
             # Plot edges
-            for i in range(len(vertices)):
+            for edge in piece.edges:
+                transformed_edge = transform.apply(edge)
                 ax.plot(
-                    [vertices[i, 0], vertices[(i + 1) % len(vertices), 0]],
-                    [vertices[i, 1], vertices[(i + 1) % len(vertices), 1]],
-                    c='k', linewidth=1,
+                    transformed_edge[:, 0],
+                    transformed_edge[:, 1],
+                    c='k',
+                    linewidth=1,
                 )
             
             # Plot vertices
@@ -301,7 +375,7 @@ class BaseArrangement:
                 horizontalalignment='center',
                 verticalalignment='center',
             )
-    
+            
     @property
     def pieces(self):
         return self._pieces
@@ -309,3 +383,11 @@ class BaseArrangement:
     @property
     def transforms(self):
         return self._transforms
+    
+    @property
+    def identified_vertices(self):
+        return self._identified_vertices
+    
+    @property
+    def identified_edges(self):
+        return self._identified_edges

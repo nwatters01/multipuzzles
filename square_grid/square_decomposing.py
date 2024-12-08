@@ -11,8 +11,9 @@ from warping import stretch
 from warping import twist
 from warping import wave
 from pieces import square_piece
+import edge_wibble
 
-_RANDOM_SEED = 1
+_RANDOM_SEED = 4
 
 
 class DecomposingPuzzle(base_puzzle.BasePuzzle):
@@ -63,6 +64,21 @@ class DecomposingPuzzle(base_puzzle.BasePuzzle):
         self.add_warping(wave_warping, arrangement_index=0)
         stretch_warping = stretch.Stretch(theta=np.pi / 4, stretch_factor=1.3)
         self.add_warping(stretch_warping, arrangement_index=0)
+        
+        # Add edge wibbling
+        sample_noise=edge_wibble.get_sample_noise()
+        curvature_object = edge_wibble.Curvature(
+            sample_curvature_magnitude=(
+                edge_wibble.get_sample_curvature_magnitude()),
+            sample_curve_length=edge_wibble.get_sample_curve_length(),
+            sample_straight_length=edge_wibble.get_sample_straight_length(),
+            sample_noise=sample_noise,
+            resolution=500,
+        )
+        flattening_fn = edge_wibble.get_flattening_fn()
+        wibbled_path_object = edge_wibble.WibbledPath(
+            curvature_object, flattening_fn)
+        self.wibble_edges(wibbled_path_object)
         
     def add_big_arrangement(self):
         """Add a random arrangement."""

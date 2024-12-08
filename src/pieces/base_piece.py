@@ -15,17 +15,39 @@ class BasePiece:
                 edge, with wrapping around to the first point.
             label (str): Label for the piece.
         """
-        self.vertices = vertices
+        self._vertices = vertices
         self._label = label
         self._num_sides = len(vertices)
-        self._edges = []
+        self.vertex_indices_per_edge = [
+            ((i - 1) % self._num_sides, i) for i in range(self._num_sides)
+        ]
+        self.edges = self.get_edges()
+    
+    def get_edges(self):
+        edges = []
         for i in range(self._num_sides):
-            self._edges.append((vertices[i - 1], vertices[i]))
-            
+            edges.append((self._vertices[i - 1], self._vertices[i]))
+        return edges
+       
     @property
-    def edges(self) -> list:
-        """Return the edges."""
-        return self._edges
+    def vertices(self) -> np.array:
+        """Return the vertices."""
+        return self._vertices
+    
+    @vertices.setter
+    def vertices(self, vertices: np.array):
+        """Set the vertices."""
+        
+        # Ensure all edge are composed of two verices for (start, end)
+        for edge in self.edges:
+            if len(edge) != 2:
+                raise ValueError(
+                    "Trying to move vertices after edge wibbling is prohibited."
+                )
+        
+        # Set the vertices and update the edges
+        self._vertices = vertices
+        self.edges = self.get_edges()
     
     @property
     def num_sides(self) -> int:

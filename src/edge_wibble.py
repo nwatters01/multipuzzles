@@ -112,7 +112,7 @@ def get_sample_noise(kernel_half_width=20, noise_amplitude=30.):
     return _sample_noise
 
 
-def get_flattening_fn(tau=9., flattening_multiplier=0.9):
+def get_flattening_fn(tau=5., flattening_multiplier=0.9):
     """Get flattening function.
     
     Flattening function is a vector of weights for a weighted average between a

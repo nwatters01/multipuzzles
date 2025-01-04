@@ -39,7 +39,7 @@ class DecomposingPuzzle(base_puzzle.BasePuzzle):
         
         # Create all the pieces
         pieces = [
-            square_piece.SquarePiece(side_length=1, label=str(i))
+            square_piece.SquarePiece(side_length=1, resolution=40, label=str(i))
             for i in range(self._num_pieces)
         ]
         
@@ -79,6 +79,10 @@ class DecomposingPuzzle(base_puzzle.BasePuzzle):
         wibbled_path_object = edge_wibble.WibbledPath(
             curvature_object, flattening_fn)
         self.wibble_edges(wibbled_path_object)
+        
+        # Update pixel positions and values
+        for piece in self._pieces:
+            piece.pixelate()
         
     def add_big_arrangement(self):
         """Add a random arrangement."""

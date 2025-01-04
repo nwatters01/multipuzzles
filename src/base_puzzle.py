@@ -105,14 +105,14 @@ class BasePuzzle:
             transform_0 = arrangement.transforms[piece_index]
             transform_1 = arrangement.transforms[piece_index_1]
             wibbled_edge_1 = transform_1.inverse(
-                transform_0.apply(wibbled_edge))
+                transform_0.apply(wibbled_edge))[::-1]
             piece_1 = self._pieces[piece_index_1]
             piece_1.edges[edge_index_1] = wibbled_edge_1
             already_wibbled[piece_index_1][edge_index_1] = True
             self._propagate_wibbled_edge(
                 piece_index_1, edge_index_1, wibbled_edge_1, already_wibbled)
     
-    def wibble_edges(self, wibbled_path_object, intersection_thresh=0.04):
+    def wibble_edges(self, wibbled_path_object):
         """Wibble the edges of the pieces."""
         
         # Iterate through edges of each piece

@@ -7,7 +7,7 @@ import numpy as np
 class SquarePiece(base_piece.BasePiece):
     """Square piece."""
     
-    def __init__(self, side_length: float, label=None):
+    def __init__(self, side_length: float, resolution: int = 100, label=None):
         """Constructor.
         
         Args:
@@ -16,4 +16,4 @@ class SquarePiece(base_piece.BasePiece):
         vertices = side_length * 0.5 * np.array([
             [1, 1], [-1, 1], [-1, -1], [1, -1],
         ])
-        super().__init__(vertices, label=label)
+        super().__init__(vertices, resolution=resolution, label=label)

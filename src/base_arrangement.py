@@ -342,7 +342,7 @@ class BaseArrangement:
         ax.set_yticks([])
         ax.set_title(title)
         
-        # Iterate through piece, plotting vertices and edges
+        # Iterate through piece, plotting vertices, edges, and pixel positions
         arranged_pieces = self.arrange()
         
         for piece_index in range(self._num_pieces):
@@ -363,6 +363,16 @@ class BaseArrangement:
             
             # Plot vertices
             ax.scatter(vertices[:, 0], vertices[:, 1], c='k', s=10)
+            
+            # Plot pixels
+            pixel_positions = transform.apply(piece.pixel_positions)
+            pixel_color = np.random.rand(3)
+            ax.scatter(
+                pixel_positions[:, 0],
+                pixel_positions[:, 1],
+                c=pixel_color,
+                s=0.3,
+            )
             
             # Plot label
             centroid = np.mean(vertices, axis=0)

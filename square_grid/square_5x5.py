@@ -24,7 +24,7 @@ class Puzzle(base_puzzle.BasePuzzle):
         
         # Create all the pieces
         pieces = [
-            square_piece.SquarePiece(side_length=1, label=str(i))
+            square_piece.SquarePiece(side_length=1, resolution=10, label=str(i))
             for i in range(self._num_pieces)
         ]
         
@@ -45,6 +45,10 @@ class Puzzle(base_puzzle.BasePuzzle):
             basin_size=3,
         )
         self.add_warping(twist_warping, arrangement_index=0)
+        
+        # Update pixel positions and values
+        for piece in self._pieces:
+            piece.pixelate()
         
     def add_random_arrangement(self):
         """Add a random arrangement."""

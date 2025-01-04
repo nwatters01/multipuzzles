@@ -366,11 +366,10 @@ class BaseArrangement:
             
             # Plot pixels
             pixel_positions = transform.apply(piece.pixel_positions)
-            pixel_color = np.random.rand(3)
             ax.scatter(
                 pixel_positions[:, 0],
                 pixel_positions[:, 1],
-                c=pixel_color,
+                c=piece.pixel_values,
                 s=0.3,
             )
             

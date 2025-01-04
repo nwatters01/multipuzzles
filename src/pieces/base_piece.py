@@ -50,8 +50,9 @@ class BasePiece:
         inside = edge_path.contains_points(pixel_positions)
         pixel_positions = pixel_positions[inside]
         
-        # Create array of RGB pixel values, initialized as NaN
-        pixel_values = np.full((len(pixel_positions), 3), np.nan)
+        # Create array of RGB pixel values, initialized as a random color
+        random_color = np.random.rand(3)
+        pixel_values = np.full((len(pixel_positions), 3), random_color)
         
         # Set pixel positions and values
         self.pixel_positions = pixel_positions

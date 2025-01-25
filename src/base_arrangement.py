@@ -1,5 +1,6 @@
 """Base arrangement class."""
 
+import interpolation
 import numpy as np
 from pieces import base_piece
 
@@ -384,6 +385,63 @@ class BaseArrangement:
                 horizontalalignment='center',
                 verticalalignment='center',
             )
+        
+    def get_image_pixels(self, image_size: Tuple[int, int]):
+        """Get pixels of image spanning the arrangement."""
+        bounding_box = self.bounding_box
+        x = np.linspace(bounding_box[0, 0], bounding_box[1, 0], image_size[0])
+        y = np.linspace(bounding_box[0, 1], bounding_box[1, 1], image_size[1])
+        image_pixel_positions = np.array(np.meshgrid(x, y)).T.reshape(-1, 2)
+        return image_pixel_positions
+    
+    def get_piece_pixels(self):
+        """Get pixels of all the pieces."""
+        piece_pixels = []
+        for piece_index in range(self._num_pieces):
+            piece = self._pieces[piece_index]
+            transform = self._transforms[piece_index]
+            transformed_pixel_positions = transform.apply(piece.pixel_positions)
+            piece_pixels.append(transformed_pixel_positions)
+        piece_pixels = np.concatenate(piece_pixels)
+        return piece_pixels
+    
+    def piece_pixels_to_image_pixels(
+        self,
+        image_size: Tuple[int, int],
+        num_neighbors: int = 10,
+    ) -> np.array:
+        """Linear map from piece pixel positions to image pixel positions.
+        
+        Args:
+            image_size (tuple[int, int]): Size of the image.
+        
+        Returns:
+            mapping (np.array): Array of shape (n_piece_pixels, n_image_pixels).
+        """
+        piece_pixels = self.get_piece_pixels()
+        image_pixels = self.get_image_pixels(image_size)
+        mapping = interpolation.nearest_neighbor_interpolation(
+            piece_pixels, image_pixels, num_neighbors=num_neighbors)
+        return mapping
+
+    def image_pixels_to_piece_pixels(
+        self,
+        image_size: Tuple[int, int],
+        num_neighbors: int = 10,
+    ) -> np.array:
+        """Linear map from image pixel positions to piece pixel positions.
+        
+        Args:
+            image_size (tuple[int, int]): Size of the image.
+        
+        Returns:
+            mapping (np.array): Array of shape (n_image_pixels, n_piece_pixels).
+        """
+        piece_pixels = self.get_piece_pixels()
+        image_pixels = self.get_image_pixels(image_size)
+        mapping = interpolation.nearest_neighbor_interpolation(
+            image_pixels, piece_pixels, num_neighbors=num_neighbors)
+        return mapping
             
     @property
     def pieces(self):
@@ -392,6 +450,24 @@ class BaseArrangement:
     @property
     def transforms(self):
         return self._transforms
+    
+    @property
+    def bounding_box(self):
+        """Return the bounding box of the arrangement."""
+        # Get arranged edges
+        arranged_edges = []
+        for piece_index in range(self._num_pieces):
+            piece = self._pieces[piece_index]
+            transform = self._transforms[piece_index]
+            arranged_edges.extend([
+                transform.apply(edge) for edge in piece.edges
+            ])
+        arranged_edges = np.concatenate(arranged_edges)
+        
+        # Find the bounding box
+        min_x, min_y = np.min(arranged_edges, axis=0)
+        max_x, max_y = np.max(arranged_edges, axis=0)
+        return np.array([[min_x, min_y], [max_x, max_y]])
     
     @property
     def identified_vertices(self):

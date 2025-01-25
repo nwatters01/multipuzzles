@@ -5,25 +5,6 @@ import numpy as np
 
 # Maximum allowable number of iterations for snapping together
 _MAX_ITERS = 1000
-# _MAX_ITERS = 1
-
-
-def _intersects(path_0, path_1, intersection_thresh=0.04):
-    """Detect whether two paths intersect.
-    
-    This intersection detection is the slowest part of the code. Consider
-    alternative algorithms to improve runtime.
-    """
-    endpoint_buffer_0 = int(np.floor(0.1 * len(path_0)))
-    endpoint_buffer_1 = int(np.floor(0.1 * len(path_1)))
-    path_0 = path_0[endpoint_buffer_0: -endpoint_buffer_0]
-    path_1 = path_1[endpoint_buffer_1: -endpoint_buffer_1]
-    path_dists = np.linalg.norm(
-        path_0[np.newaxis] - path_1[:, np.newaxis], axis=2)
-    if np.sum(path_dists < intersection_thresh):
-        return True
-    else:
-        return False
 
 
 class BasePuzzle:
@@ -40,8 +21,6 @@ class BasePuzzle:
                     arrangement_index,
                     convergence_threshold=1e-2,
                     plot_every=None):
-        # TODO: Consider moving this to the arrangement class
-        
         # Apply the warping to the arrangement
         arrangement = self._arrangements[arrangement_index]
         for piece, transform in zip(arrangement.pieces, arrangement.transforms):
@@ -132,6 +111,23 @@ class BasePuzzle:
                 already_wibbled[piece_index_0][edge_index_0] = True
                 self._propagate_wibbled_edge(
                     piece_index_0, edge_index_0, wibbled_edge, already_wibbled)
+                
+    def get_arrangement_pixel_mapping(
+        self,
+        arrangement_index_0,
+        image_size_0,
+        arrangement_index_1,
+        image_size_1,
+        num_neighbors=5,
+    ):
+        arrangement_0 = self._arrangements[arrangement_index_0]
+        arrangement_1 = self._arrangements[arrangement_index_1]
+        arrangement_0_to_pieces = arrangement_0.image_pixels_to_piece_pixels(
+            image_size_0, num_neighbors=num_neighbors)
+        pieces_to_arrangement_1 = arrangement_1.piece_pixels_to_image_pixels(
+            image_size_1, num_neighbors=num_neighbors)
+        composition = pieces_to_arrangement_1 @ arrangement_0_to_pieces
+        return composition
         
     def plot_arrangements(self, title_prefix=""):
         num_arrangements = len(self._arrangements)

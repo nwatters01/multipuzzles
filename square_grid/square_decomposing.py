@@ -12,6 +12,7 @@ from warping import twist
 from warping import wave
 from pieces import square_piece
 import edge_wibble
+from PIL import Image
 
 _RANDOM_SEED = 4
 
@@ -39,7 +40,7 @@ class DecomposingPuzzle(base_puzzle.BasePuzzle):
         
         # Create all the pieces
         pieces = [
-            square_piece.SquarePiece(side_length=1, resolution=40, label=str(i))
+            square_piece.SquarePiece(side_length=1, resolution=10, label=str(i))
             for i in range(self._num_pieces)
         ]
         
@@ -83,6 +84,89 @@ class DecomposingPuzzle(base_puzzle.BasePuzzle):
         # Update pixel positions and values
         for piece in self._pieces:
             piece.pixelate()
+        
+        # Render the image
+        # self._render_image(0, "../images/frog.jpg")
+        
+        # Demonstrate the interpolation on the first two arrangements
+        self._interpolation(
+            [0, 1], [(150, 100), (100, 150)], "../images/frog.jpg",
+        )
+        
+    def _interpolation(self, arrangement_indices, image_sizes, image_path):
+        """Render image interpolation."""
+        
+        # Load image as array and transform to the right orientation
+        image = plt.imread(image_path)
+        
+        # Resize image to the image_sizes[0]
+        image_pil = Image.fromarray(image.astype(np.uint8))
+        image = np.array(image_pil.resize(image_sizes[0])) / 255.0
+        
+        # Get pixel mapping from one arrangement to the other
+        mapping = self.get_arrangement_pixel_mapping(
+            arrangement_indices[0],
+            image_sizes[0],
+            arrangement_indices[1],
+            image_sizes[1],
+        )
+        
+        # Flatten image and apply mapping
+        image_flat = image.reshape(-1, 3)
+        image_flat_interpolated = mapping @ image_flat
+        
+        # Reshape to image_sizes[1]
+        image_interpolated = image_flat_interpolated.reshape(
+            image_sizes[1][0], image_sizes[1][1], 3)
+        
+        # Plot images
+        fig, axes = plt.subplots(1, 2, figsize=(12, 6))
+        axes[0].imshow(image)
+        axes[0].set_title("Original Image")
+        axes[1].imshow(image_interpolated)
+        axes[1].set_title("Interpolated Image")
+        plt.show()
+            
+    def _render_image(self, arrangement_index, image_path):
+        """Render image under given arrangement."""
+        arrangement = self._arrangements[arrangement_index]
+        
+        # Load image as array and transform to the right orientation
+        image = plt.imread(image_path)
+        image = np.transpose(image, (1, 0, 2))
+        image = np.fliplr(image)
+        image_size = np.array(image.shape[:2])
+        
+        # Figure out bounding box of the arrangement
+        bounding_box = arrangement.bounding_box
+        
+        # Iterate through pieces, figuring out where they go and overwriting
+        # their pixel values
+        for piece_index, piece in enumerate(arrangement.pieces):
+            transform = arrangement.transforms[piece_index]
+            transformed_pixel_positions = transform.apply(piece.pixel_positions)
+            
+            # Convert to image coordinates using the bounding box and image size
+            transformed_pixel_positions -= bounding_box[0]
+            transformed_pixel_positions /= (bounding_box[1] - bounding_box[0])
+            image_pixel_positions = transformed_pixel_positions * image_size
+            
+            # Round and clip pixel positions
+            image_pixel_positions = np.clip(
+                np.round(image_pixel_positions).astype(int),
+                0,
+                image_size - 1,
+            )
+            
+            # Get pixel values
+            pixel_values = image[
+                image_pixel_positions[:, 0],
+                image_pixel_positions[:, 1],
+            ]
+            pixel_values = pixel_values / 255.0
+            
+            # Set pixel values in the piece
+            piece.pixel_values = pixel_values
         
     def add_big_arrangement(self):
         """Add a random arrangement."""

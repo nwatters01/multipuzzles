@@ -89,12 +89,12 @@ class DecomposingPuzzle(base_puzzle.BasePuzzle):
         # self._render_image(0, "../images/frog.jpg")
         
         # Save the puzzle
-        self.save("../logs/decomposing_puzzle_v0")
+        # self.save("../logs/decomposing_puzzle_v0")
         
         # Demonstrate the interpolation on the first two arrangements
-        # self._interpolation(
-        #     [0, 1], [(110, 100), (100, 110)], "../images/frog.jpg",
-        # )
+        self._interpolation(
+            [0, 1], [(110, 100), (100, 110)], "../images/frog.jpg",
+        )
         
     def _interpolation(self, arrangement_indices, image_sizes, image_path):
         """Render image interpolation."""

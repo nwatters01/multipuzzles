@@ -48,7 +48,7 @@ class SnapshotPuzzle(base_puzzle.BasePuzzle):
             image_sizes[1][0], image_sizes[1][1], 3)
         
         # Plot images
-        fig, axes = plt.subplots(1, 2, figsize=(12, 6))
+        _, axes = plt.subplots(1, 2, figsize=(12, 6))
         axes[0].imshow(image)
         axes[0].set_title("Original Image")
         axes[1].imshow(image_interpolated)

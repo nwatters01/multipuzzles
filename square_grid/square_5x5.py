@@ -7,6 +7,7 @@ import sys
 sys.path.append("../src")
 import base_puzzle
 import base_arrangement
+import edge_wibble
 from warping import stretch
 from warping import twist
 from pieces import square_piece
@@ -46,9 +47,27 @@ class Puzzle(base_puzzle.BasePuzzle):
         )
         self.add_warping(twist_warping, arrangement_index=0)
         
+        # Add edge wibbling
+        sample_noise=edge_wibble.get_sample_noise()
+        curvature_object = edge_wibble.Curvature(
+            sample_curvature_magnitude=(
+                edge_wibble.get_sample_curvature_magnitude()),
+            sample_curve_length=edge_wibble.get_sample_curve_length(),
+            sample_straight_length=edge_wibble.get_sample_straight_length(),
+            sample_noise=sample_noise,
+            resolution=500,
+        )
+        flattening_fn = edge_wibble.get_flattening_fn()
+        wibbled_path_object = edge_wibble.WibbledPath(
+            curvature_object, flattening_fn)
+        self.wibble_edges(wibbled_path_object)
+        
         # Update pixel positions and values
         for piece in self._pieces:
             piece.pixelate()
+            
+        # Save the puzzle
+        # self.save("../logs/square_5x5_v0")
         
     def add_random_arrangement(self):
         """Add a random arrangement."""

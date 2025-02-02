@@ -88,10 +88,13 @@ class DecomposingPuzzle(base_puzzle.BasePuzzle):
         # Render the image
         # self._render_image(0, "../images/frog.jpg")
         
+        # Save the puzzle
+        self.save("../logs/decomposing_puzzle_v0")
+        
         # Demonstrate the interpolation on the first two arrangements
-        self._interpolation(
-            [0, 1], [(150, 100), (100, 150)], "../images/frog.jpg",
-        )
+        # self._interpolation(
+        #     [0, 1], [(110, 100), (100, 110)], "../images/frog.jpg",
+        # )
         
     def _interpolation(self, arrangement_indices, image_sizes, image_path):
         """Render image interpolation."""
@@ -102,6 +105,8 @@ class DecomposingPuzzle(base_puzzle.BasePuzzle):
         # Resize image to the image_sizes[0]
         image_pil = Image.fromarray(image.astype(np.uint8))
         image = np.array(image_pil.resize(image_sizes[0])) / 255.0
+        # Transpose image because PIL reverses the order of the axes
+        image = np.transpose(image, (1, 0, 2))
         
         # Get pixel mapping from one arrangement to the other
         mapping = self.get_arrangement_pixel_mapping(
@@ -120,7 +125,7 @@ class DecomposingPuzzle(base_puzzle.BasePuzzle):
             image_sizes[1][0], image_sizes[1][1], 3)
         
         # Plot images
-        fig, axes = plt.subplots(1, 2, figsize=(12, 6))
+        _, axes = plt.subplots(1, 2, figsize=(12, 6))
         axes[0].imshow(image)
         axes[0].set_title("Original Image")
         axes[1].imshow(image_interpolated)

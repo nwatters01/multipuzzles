@@ -2,6 +2,10 @@
 
 from matplotlib import pyplot as plt
 import numpy as np
+from pathlib import Path
+from pieces import base_piece
+import base_arrangement
+import shutil
 
 # Maximum allowable number of iterations for snapping together
 _MAX_ITERS = 1000
@@ -14,6 +18,24 @@ class BasePuzzle:
         self._arrangements = []
         
     def add_arrangement(self, arrangement):
+        # Ensure that the arrangement has the same pieces as existing
+        # arrangements
+        if len(self._arrangements) > 1:
+            old_pieces = self._arrangements[0].pieces
+            new_pieces = arrangement.pieces
+            if len(old_pieces) != len(new_pieces):
+                raise ValueError(
+                    "Arrangement has different number of pieces than existing "
+                    "arrangements."
+                )
+            for old_piece, new_piece in zip(old_pieces, new_pieces):
+                if id(old_piece) != id(new_piece):
+                    raise ValueError(
+                        "Arrangement has different pieces than existing "
+                        "arrangements."
+                    )
+        
+        # Add arrangement
         self._arrangements.append(arrangement)
         
     def add_warping(self,
@@ -127,6 +149,7 @@ class BasePuzzle:
         pieces_to_arrangement_1 = arrangement_1.piece_pixels_to_image_pixels(
             image_size_1, num_neighbors=num_neighbors)
         composition = pieces_to_arrangement_1 @ arrangement_0_to_pieces
+        # import pdb; pdb.set_trace()
         return composition
         
     def plot_arrangements(self, title_prefix=""):
@@ -145,3 +168,45 @@ class BasePuzzle:
         fig.tight_layout()
         
         return fig
+    
+    def save(self, log_dir, zfill=4):
+        shutil.rmtree(log_dir, ignore_errors=True)
+        log_dir = Path(log_dir)
+        log_dir.mkdir(parents=True, exist_ok=True)
+        print(f"Saving to {log_dir}")
+        
+        # Save pieces
+        log_dir_pieces = log_dir / "pieces"
+        for i, piece in enumerate(self._pieces):
+            piece.save(log_dir_pieces / str(i).zfill(zfill))
+        
+        # Save arrangements
+        log_dir_arrangements = log_dir / "arrangements"
+        for i, arrangement in enumerate(self._arrangements):
+            arrangement.save(log_dir_arrangements / str(i).zfill(zfill))
+            
+    @classmethod
+    def load(cls, log_dir):
+        """Recreate from log directory."""
+        log_dir = Path(log_dir)
+        
+        # Load pieces
+        log_dir_pieces = log_dir / "pieces"
+        pieces = []
+        for piece_file in sorted(list(log_dir_pieces.iterdir())):
+            piece = base_piece.BasePiece.load(piece_file)
+            pieces.append(piece)
+            
+        # Load the arrangements
+        log_dir_arrangements = log_dir / "arrangements"
+        arrangements = []
+        for arrangement_dir in sorted(list(log_dir_arrangements.iterdir())): 
+            arrangement = base_arrangement.BaseArrangement.load(
+                pieces, arrangement_dir)
+            arrangements.append(arrangement)
+        
+        puzzle = cls(pieces)
+        for arrangement in arrangements:
+            puzzle.add_arrangement(arrangement)
+        
+        return puzzle

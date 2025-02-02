@@ -1,7 +1,8 @@
 """Base piece class."""
 
-from matplotlib.path import Path
+from matplotlib import path as matplotlib_path
 import numpy as np
+from pathlib import Path
 
 
 class BasePiece:
@@ -46,7 +47,7 @@ class BasePiece:
         pixel_positions = np.array(np.meshgrid(x, y)).T.reshape(-1, 2)
         
         # Remove pixel positions that are outside the piece
-        edge_path = Path(edges_array)
+        edge_path = matplotlib_path.Path(edges_array)
         inside = edge_path.contains_points(pixel_positions)
         pixel_positions = pixel_positions[inside]
         
@@ -57,6 +58,39 @@ class BasePiece:
         # Set pixel positions and values
         self.pixel_positions = pixel_positions
         self.pixel_values = pixel_values
+        
+    def save(self, path):
+        """Save the piece attributes."""
+        log_dir = Path(path)
+        log_dir.mkdir(parents=True, exist_ok=True)
+        np.save(log_dir / "vertices.npy", self._vertices)
+        np.save(log_dir / "edges.npy", self.edges)
+        np.save(log_dir / "pixel_positions.npy", self.pixel_positions)
+        np.save(log_dir / "pixel_values.npy", self.pixel_values)
+        if self._label is not None:
+            with open(log_dir / "label.txt", "w") as f:
+                f.write(self._label)
+                
+    @classmethod
+    def load(cls, path):
+        """Load the piece attributes."""
+        log_dir = Path(path)
+        vertices = np.load(log_dir / "vertices.npy")
+        edges = np.load(log_dir / "edges.npy")
+        pixel_positions = np.load(log_dir / "pixel_positions.npy")
+        pixel_values = np.load(log_dir / "pixel_values.npy")
+        label = None
+        if (log_dir / "label.txt").exists():
+            with open(log_dir / "label.txt", "r") as f:
+                label = f.read()
+        
+        # Create piece and override edges and pixels
+        piece = cls(vertices=vertices, label=label)
+        piece.edges = edges
+        piece.pixel_positions = pixel_positions
+        piece.pixel_values = pixel_values
+        
+        return piece
        
     @property
     def vertices(self) -> np.array:

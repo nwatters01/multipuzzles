@@ -2,8 +2,8 @@
 
 import interpolation
 import numpy as np
+from pathlib import Path
 from pieces import base_piece
-
 from typing import List, Tuple
 
 
@@ -81,6 +81,19 @@ class Transform:
         rotated_points = np.dot(
             translated_points, self.inverse_rotation_matrix)
         return rotated_points
+    
+    def save(self, path: Path):
+        """Save the transform to a file."""
+        path.mkdir(parents=True, exist_ok=True)
+        np.save(path / 'translation', self.translation)
+        np.save(path / 'theta', np.array([self.theta]))
+    
+    @classmethod
+    def load(cls, path: Path):
+        """Load the transform from a file."""
+        translation = np.load(path / 'translation.npy')
+        theta = np.load(path / 'theta.npy')[0]
+        return cls(translation, theta)
     
     @property
     def theta(self):
@@ -442,6 +455,22 @@ class BaseArrangement:
         mapping = interpolation.nearest_neighbor_interpolation(
             image_pixels, piece_pixels, num_neighbors=num_neighbors)
         return mapping
+    
+    def save(self, path: Path, zfill=4):
+        """Save the arrangement to a file."""
+        path.mkdir(parents=True, exist_ok=True)
+        for i, transform in enumerate(self._transforms):
+            zfill_i = str(i).zfill(zfill)
+            transform.save(path / f"transform_{zfill_i}")
+        
+    @classmethod
+    def load(cls, pieces, path: Path):
+        """Load the arrangement from a file."""
+        transforms = []
+        for transform_file in sorted(list(path.iterdir())):
+            transform = Transform.load(transform_file)
+            transforms.append(transform)
+        return cls(pieces, transforms)
             
     @property
     def pieces(self):
